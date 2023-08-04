@@ -14,6 +14,9 @@ cap = cv2.VideoCapture(url)
 fps = 0.0
 prev_time = 0
 
+average = 0
+sum = 0
+count = 0
 while True:
     try:
         # Read a frame from the video stream
@@ -29,18 +32,26 @@ while True:
         # Predict objects using YOLOv8
         results = model.predict(frame_rgb)
 
-        # Plot the bounding boxes and labels on the frame
-        frame_with_bboxes = results[0].plot(boxes=True, labels=True, conf=True)
+        # Plot the masks on the frame
+        frame_with_masks = results[0].plot(masks=True, conf=True, img=frame)
 
         # Calculate FPS and add FPS text overlay on the frame
         current_time = cv2.getTickCount()
         fps = cv2.getTickFrequency() / (current_time - prev_time)
         prev_time = current_time
         fps_text = f"FPS: {fps:.2f}"
-        cv2.putText(frame_with_bboxes, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-        # Display the frame with bounding boxes
-        cv2.imshow("Object Detection", frame_with_bboxes)
+        if count < 20 and count >= 0:
+            sum += fps
+            count += 1
+        else:
+            average = sum/count
+            sum = 0
+            count = 0
+        average_text = f"Average: {average:.2f}"
+        cv2.putText(frame_with_masks, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(frame_with_masks, average_text, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        # Display the frame with masks
+        cv2.imshow("Object Detection with Masks", frame_with_masks)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
